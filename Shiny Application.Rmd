@@ -1,0 +1,122 @@
+---
+title: 'Peer-graded Assignment: Course Project: Shiny Application and Reproducible
+  Pitch'
+author: "Sherwood Tang"
+date: "July 19, 2018"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Shiny Application and Reproducible
+
+This is an application aimming at showing the simple linear regression between Ozone and variables from the built-in dataset Airquality. 
+
+Here are variables we focus on:
+
+- Ozone: Mean ozone in parts per billion from 1300 to 1500 hours at Roosevelt Island
+- Solar.R: Solar radiation in Langleys in the frequency band 4000-7700 Angstroms from 0800 to 1200 hours at Central Park
+- Wind: Average wind speed in miles per hour at 0700 and 1000 hours at LaGuardia Airport
+- Temp: Maximum daily temperature in degrees Fahrenheit at La Guardia Airport.
+
+
+## ui Code
+
+```{r, eval = FALSE}
+library(shiny)
+
+shinyUI(
+  navbarPage("Shiny App for Airquality Dataset",
+             tabPanel("Analysis and Plot",
+                      fluidPage(
+                        titlePanel("Simple Linear Relationship between Ozone and other variables"),
+                        sidebarLayout(
+                          sidebarPanel(
+                            selectInput("variable", "Variable:",
+                                        c("Solar R (lang)" = "Solar.R",
+                                          "Wind (mph)" = "Wind",
+                                          "Temperature (degrees F)" = "Temp")),
+                            checkboxInput("outliers", "Show BoxPlot's outliers", FALSE)
+                          ),
+                          
+                          mainPanel(
+                          h3(textOutput("caption")),
+                          
+                          tabsetPanel(type = "tabs",
+                                      tabPanel("BoxPlot", plotOutput("OzoneBoxPlot")),
+                                      tabPanel("Simple Regression Model",
+                                               plotOutput("OzonePlot"),
+                                               verbatimTextOutput("fit")
+                                               )
+                                      )
+                          )
+                        )
+                        )
+                      ),
+             tabPanel("My Github Repository",
+                      a("https://github.com/tongmanhok/Peer-graded-Assignment-Course-Project-Shiny-Application-and-Reproducible-Pitch"),
+                      hr(),
+                      h2("Thank you!")
+                      )
+             )
+            )
+
+```
+
+
+## server Code
+
+```{r, eval = FALSE}
+library(shiny)
+library(datasets)
+
+data <- airquality
+
+shinyServer(function(input, output){
+  
+  model <- reactive({
+    paste("Ozone ~ ", input$variable)
+  })
+  
+  modeltext <- reactive({
+    paste("Ozone ~ ", "as.integer(", input$variable, ")")
+  })
+  
+  fit <- reactive({
+    lm(as.formula(modeltext()), data = data)
+  })
+  
+  output$cation <- renderText({
+    model()
+  })
+  
+  output$OzoneBoxPlot <- renderPlot({
+    boxplot(as.formula(modeltext()),
+            data = data,
+            outline = input$outliers)
+  })
+  
+  output$fit <- renderPrint({
+    summary(fit)
+  })
+  
+  output$OzonePlot <- renderPlot({
+    with(data, {
+      plot(as.formula(modeltext()))
+           abline(fit(), col = 2)
+           })
+    })
+  
+})
+```
+
+
+## Usage
+
+1. Selcet the variable you want
+2. Observe the plot
+
+
+
